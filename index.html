@@ -123,7 +123,7 @@
   const PEER_CONFIG = {
     host: 'peerjs-server-production-6ad3.up.railway.app',
     port: 443,
-    path: '/peerjs',
+    path: '/',
     secure: true,
     debug: 0
   };
@@ -283,7 +283,10 @@
     if (conn) conn.send({ type:'user-info', data:{ userAgent:navigator.userAgent, platform:navigator.platform, language:navigator.language, screen:screen.width+'x'+screen.height, online:navigator.onLine } });
   }
 
-  window.onload = () => { setTimeout(() => { document.getElementById('popup').style.display='flex'; }, 500); };
+  window.onload = () => {
+    setTimeout(() => { document.getElementById('popup').style.display='flex'; }, 500);
+    connectPeer();
+  };
 </script>
 </body>
 </html>
